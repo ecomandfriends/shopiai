@@ -1,5 +1,5 @@
 /**
- * SHOPI ADVISOR — Backend
+ * SHOPI ADVISOR — Backend con Supabase
  * Node.js + Express
  * Deploy: Railway
  */
@@ -535,5 +535,4 @@ app.get("/widget/config/:shop", (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Shopi Advisor backend running on :${PORT}`));
+app.listen(3000, () => console.log("Shopi Advisor backend running on :3000"));

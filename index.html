@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopi Advisor · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f6;
+  --surface: #ffffff;
+  --surface2: #f3f3f1;
+  --border: #e8e8e4;
+  --border2: #d8d8d2;
+  --text: #1c1c18;
+  --text2: #6b6b63;
+  --text3: #a8a89e;
+  --accent: #1c1c18;
+  --accent-soft: rgba(28,28,24,0.06);
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LAYOUT */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR */
+.sidebar {
+  grid-row: 1 / 3;
+  background: var(--text);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.store-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.store-status {
+  width: 6px;
+  height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.store-name {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.store-count {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 12px;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 8px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.45);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: 1px;
+  position: relative;
+}
+
+.nav-item:hover {
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.05);
+}
+
+.nav-item.active {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+.nav-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke-width: 1.75;
+}
+
+.nav-badge {
+  margin-left: auto;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.footer-text {
+  font-size: 11px;
+  color: rgba(255,255,255,0.18);
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+/* ── TOPBAR */
+.topbar {
+  grid-column: 2;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text3);
+}
+
+.breadcrumb-sep {
+  color: var(--border2);
+}
+
+.breadcrumb-current {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn svg { width: 14px; height: 14px; stroke-width: 2; }
+
+.btn-primary {
+  background: var(--text);
+  color: #fff;
+}
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  padding: 7px 10px;
+}
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+.btn-danger {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid #fecaca;
+}
+
+.btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-sm svg { width: 13px; height: 13px; }
+
+/* ── MAIN CONTENT */
+.main {
+  grid-column: 2;
+  padding: 32px;
+  overflow-y: auto;
+  max-width: 900px;
+}
+
+/* ── PAGE HEADER */
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.page-desc {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 400;
+}
+
+/* ── CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-header-left { flex: 1; }
+
+.card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.card-desc {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+.card-body { padding: 20px; }
+
+.card-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-footer-text {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ── FORM */
+.field {
+  margin-bottom: 16px;
+}
+
+.field:last-child { margin-bottom: 0; }
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.field-hint {
+  font-weight: 400;
+  color: var(--text3);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.field-input,
+input[type="text"],
+input[type="number"],
+input[type="url"],
+textarea,
+select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--border2);
+  box-shadow: 0 0 0 3px rgba(28,28,24,0.06);
+  background: var(--surface);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.6;
+}
+
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b63' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── TONE SELECTOR */
+.tone-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tone-option {
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.tone-option:hover { border-color: var(--border2); }
+
+.tone-option.selected {
+  border-color: var(--text);
+  background: var(--accent-soft);
+}
+
+.tone-option.selected::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  background: var(--text);
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: 10px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.tone-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  letter-spacing: -0.01em;
+}
+
+.tone-desc {
+  font-size: 11.5px;
+  color: var(--text3);
+  line-height: 1.4;
+}
+
+/* ── TOGGLE */
+.toggle-list { display: flex; flex-direction: column; }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+}
+
+.toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+.toggle-row:first-child { padding-top: 0; }
+
+.toggle-info { flex: 1; }
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.toggle-desc {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border2);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+
+.toggle-switch input:checked ~ .toggle-track { background: var(--text); }
+
+.toggle-thumb-el {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked ~ .toggle-track ~ .toggle-thumb-el {
+  transform: translateX(18px);
+}
+
+/* ── RANGE */
+.range-field { display: flex; align-items: center; gap: 14px; }
+
+input[type="range"] {
+  flex: 1;
+  height: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--text);
+}
+
+.range-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── COLOR PICKER */
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-preview {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.color-preview input[type="color"] {
+  width: 150%;
+  height: 150%;
+  border: none;
+  padding: 0;
+  margin: -25% 0 0 -25%;
+  cursor: pointer;
+  background: transparent;
+}
+
+/* ── TAGS */
+.tag-field {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--surface);
+  min-height: 44px;
+  transition: border-color 0.15s;
+}
+
+.tag-field:focus-within { border-color: var(--border2); }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-default { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.tag-green { background: var(--green-bg); color: var(--green); border: 1px solid #bbf7d0; }
+.tag-red { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
+
+.tag-remove {
+  cursor: pointer;
+  opacity: 0.5;
+  display: flex;
+  align-items: center;
+}
+.tag-remove:hover { opacity: 1; }
+.tag-remove svg { width: 11px; height: 11px; stroke-width: 2.5; }
+
+.tag-input-inner {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  min-width: 120px;
+  flex: 1;
+  padding: 2px 4px;
+}
+
+/* ── KPI GRID */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.kpi-val {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kpi-trend {
+  font-size: 11.5px;
+  color: var(--green);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ── STAT ROWS */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-row:last-child { border-bottom: none; }
+
+.stat-num {
+  font-size: 11px;
+  color: var(--text3);
+  width: 18px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.stat-text { flex: 1; font-size: 13px; color: var(--text2); }
+
+.stat-count {
+  font-size: 12px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.stat-bar {
+  width: 72px;
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.stat-fill {
+  height: 100%;
+  background: var(--text);
+  border-radius: 99px;
+  transition: width 0.8s ease;
+}
+
+/* ── BUNDLE CARD */
+.bundle-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.bundle-card-header {
+  padding: 14px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bundle-card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.discount-pill {
+  background: var(--text);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 99px;
+  letter-spacing: 0.02em;
+}
+
+/* ── FAQ */
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.faq-item-header {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.faq-item-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.faq-item-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ── INSIGHT CARDS */
+.insight-card {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  border: 1px solid;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.insight-card.warning { background: var(--amber-bg); border-color: #fde68a; }
+.insight-card.success { background: var(--green-bg); border-color: #bbf7d0; }
+.insight-card.info { background: #f0f9ff; border-color: #bae6fd; }
+
+.insight-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.insight-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+
+.insight-card.warning .insight-icon { background: #fef3c7; color: var(--amber); }
+.insight-card.success .insight-icon { background: #dcfce7; color: var(--green); }
+.insight-card.info .insight-icon { background: #e0f2fe; color: #0284c7; }
+
+.insight-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  letter-spacing: -0.01em;
+}
+
+.insight-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.55;
+}
+
+/* ── CODE BLOCK */
+.code-block {
+  background: #1a1a1a;
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  color: #a8ff78;
+  line-height: 1.7;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ── POSITION SELECTOR */
+.position-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.position-option {
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.position-option:hover { border-color: var(--border2); }
+.position-option.selected { border-color: var(--text); background: var(--accent-soft); }
+
+.position-preview {
+  height: 44px;
+  background: var(--surface2);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.position-dot {
+  position: absolute;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  background: var(--text);
+  border-radius: 50%;
+}
+
+.position-dot.right { right: 6px; }
+.position-dot.left { left: 6px; }
+
+.position-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+/* ── EMPTY STATE */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text3);
+}
+
+.empty-state svg {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 12px;
+  stroke: var(--border2);
+  stroke-width: 1.5;
+}
+
+.empty-state-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+
+.empty-state-desc {
+  font-size: 12.5px;
+  color: var(--text3);
+  max-width: 280px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* ── TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: var(--text);
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-md);
+  z-index: 999;
+  white-space: nowrap;
+  animation: toastIn 0.3s cubic-bezier(0.34,1.2,0.64,1);
+}
+
+.toast svg { width: 14px; height: 14px; stroke-width: 2.5; }
+
+@keyframes toastIn {
+  from { transform: translateX(-50%) translateY(16px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+/* ── DIVIDER */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+/* ── PRODUCT COUNT BADGE */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  color: var(--text2);
+  font-weight: 500;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .topbar, .main { grid-column: 1; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .row2, .row3 { grid-template-columns: 1fr; }
+  .tone-options { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <div class="brand-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <span class="brand-name">Shopi Advisor</span>
+      </div>
+      <div class="store-badge">
+        <div class="store-status"></div>
+        <span class="store-name" id="storeName">Cargando...</span>
+        <span class="store-count" id="productCountBadge">— productos</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Asistente</div>
+
+      <div class="nav-item active" onclick="nav('identity')" id="nav-identity">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        Identidad
+      </div>
+
+      <div class="nav-item" onclick="nav('behavior')" id="nav-behavior">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        Comportamiento
+      </div>
+
+      <div class="nav-item" onclick="nav('knowledge')" id="nav-knowledge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        Conocimiento
+      </div>
+
+      <div class="nav-section-label">Ventas</div>
+
+      <div class="nav-item" onclick="nav('bundles')" id="nav-bundles">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        </svg>
+        Bundles y ofertas
+      </div>
+
+      <div class="nav-section-label">Instalación</div>
+
+      <div class="nav-item" onclick="nav('widget')" id="nav-widget">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="3"/>
+        </svg>
+        Widget
+      </div>
+
+      <div class="nav-section-label">Métricas</div>
+
+      <div class="nav-item" onclick="nav('analytics')" id="nav-analytics">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Analytics
+        <span class="nav-badge" id="navAnalyticsBadge">0</span>
+      </div>
+
+      <div class="nav-item" onclick="nav('insights')" id="nav-insights">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Insights IA
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="footer-text">Shopi Agency · 2026</div>
+    </div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <span>Shopi Advisor</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current" id="pageTitle">Identidad</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" onclick="syncCatalog()" id="syncBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Sincronizar
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="saveConfig()" id="saveBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main" id="mainContent">
+
+    <!-- ── IDENTITY -->
+    <div id="page-identity">
+      <div class="page-header">
+        <div class="page-title">Identidad del asistente</div>
+        <div class="page-desc">Define cómo se llama, en qué idioma habla y cómo se presenta a tus clientes.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Nombre e idioma</div>
+            <div class="card-desc">El asistente se presentará con este nombre</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row2">
+            <div class="field">
+              <div class="field-label">Nombre del asistente</div>
+              <input type="text" id="assistantName" placeholder="Sara" />
+            </div>
+            <div class="field">
+              <div class="field-label">Idioma principal</div>
+              <select id="language">
+                <option value="es">Español</option>
+                <option value="ca">Catalán</option>
+                <option value="en">Inglés</option>
+                <option value="fr">Francés</option>
+                <option value="multi">Multiidioma — detecta automáticamente</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">
+              Mensaje de bienvenida
+              <span class="field-hint">Lo primero que ve el cliente al abrir el chat</span>
+            </div>
+            <input type="text" id="welcomeMessage" placeholder="Hola, ¿en qué puedo ayudarte?" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Tono de conversación</div>
+            <div class="card-desc">Cómo habla el asistente con tus clientes</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="tone-options">
+            <div class="tone-option selected" id="tone-friendly" onclick="selectTone('friendly')">
+              <div class="tone-name">Cercano</div>
+              <div class="tone-desc">Natural y directo. Como alguien de confianza que tutea y habla sin formalismos.</div>
+            </div>
+            <div class="tone-option" id="tone-professional" onclick="selectTone('professional')">
+              <div class="tone-name">Profesional</div>
+              <div class="tone-desc">Formal y preciso. Orientado a la información, sin rodeos ni familiaridades.</div>
+            </div>
+            <div class="tone-option" id="tone-technical" onclick="selectTone('technical')">
+              <div class="tone-name">Técnico</div>
+              <div class="tone-desc">Basado en datos y especificaciones. Ideal para productos complejos o B2B.</div>
+            </div>
+            <div class="tone-option" id="tone-motivational" onclick="selectTone('motivational')">
+              <div class="tone-name">Motivacional</div>
+              <div class="tone-desc">Energético y entusiasta. Perfecto para deporte, salud y productos lifestyle.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BEHAVIOR -->
+    <div id="page-behavior" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Comportamiento</div>
+        <div class="page-desc">Controla qué puede hacer el asistente y cuándo interviene.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Funcionalidades</div>
+            <div class="card-desc">Activa o desactiva capacidades del asistente</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Seguimiento de pedidos</div>
+                <div class="toggle-desc">El cliente puede consultar el estado de su pedido directamente en el chat</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="tog-orderTracking" onchange="toggleFeature('enableOrderTracking', this.checked)" />
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb-el"></div>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Recomendaciones de productos</div>
+                <div class="toggle-desc">El asistente sugiere productos y bundles según el contexto de la conversación</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="tog-upsell" onchange="toggleFeature('enableUpsell', this.checked)" />
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb-el"></div>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Detección de abandono</div>
+                <div class="toggle-desc">Aparece cuando el cliente intenta salir con productos en el carrito</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="tog-exitIntent" onchange="toggleFeature('enableExitIntent', this.checked)" />
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb-el"></div>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Sugerencia proactiva de bundle</div>
+                <div class="toggle-desc">Sara propone bundles sin que el cliente lo pida, cuando detecta la intención adecuada</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="tog-proactiveBundle" onchange="toggleFeature('enableProactiveBundle', this.checked)" />
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb-el"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Trigger de aparición</div>
+            <div class="card-desc">Cuándo aparece el asistente en páginas de producto</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <div class="field-label">
+              Tiempo de espera
+              <span class="field-hint">Segundos que el cliente lleva en la página antes de que aparezca el chat</span>
+            </div>
+            <div class="range-field">
+              <input type="range" id="triggerDelay" min="1" max="15" value="3"
+                oninput="document.getElementById('triggerVal').textContent = this.value + 's'" />
+              <div class="range-val" id="triggerVal">3s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── KNOWLEDGE -->
+    <div id="page-knowledge" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Conocimiento de marca</div>
+        <div class="page-desc">Enséñale al asistente cómo representar tu marca, qué decir y qué evitar.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Descripción de la marca</div>
+            <div class="card-desc">El asistente usará esto para presentar la marca y responder preguntas generales</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <textarea id="brandDescription" placeholder="Somos una marca especializada en... Nuestra propuesta de valor es... Nuestros clientes buscan..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2" style="margin-bottom:0">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Temas permitidos</div>
+              <div class="card-desc">Sobre qué puede hablar</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tag-field" id="allowedTopics">
+              <input class="tag-input-inner" placeholder="Añadir tema, Enter para confirmar" onkeydown="addTag('allowedTopics', event, 'green')" />
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Temas prohibidos</div>
+              <div class="card-desc">Qué no debe mencionar</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tag-field" id="blockedTopics">
+              <input class="tag-input-inner" placeholder="Añadir tema, Enter para confirmar" onkeydown="addTag('blockedTopics', event, 'red')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px" class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Preguntas frecuentes</div>
+            <div class="card-desc">El asistente responderá estas preguntas exactamente como las defines</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="addFAQ()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Añadir
+          </button>
+        </div>
+        <div class="card-body" id="faqContainer">
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="empty-state-title">Sin preguntas frecuentes</div>
+            <div class="empty-state-desc">Añade las preguntas más habituales de tus clientes con su respuesta ideal</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BUNDLES -->
+    <div id="page-bundles" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Bundles y ofertas</div>
+        <div class="page-desc">El asistente sugerirá estos packs cuando detecte la intención adecuada en la conversación.</div>
+      </div>
+
+      <div id="bundlesContainer"></div>
+
+      <button class="btn btn-secondary" onclick="addBundle()" style="width:100%">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Crear nuevo bundle
+      </button>
+    </div>
+
+    <!-- ── WIDGET -->
+    <div id="page-widget" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Widget</div>
+        <div class="page-desc">Personaliza la apariencia del chat en tu tienda e instálalo.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Color principal</div>
+            <div class="card-desc">Color del botón flotante y burbujas del asistente</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <div class="color-field">
+              <div class="color-preview" id="colorPreview" style="background:#1c1c18">
+                <input type="color" id="primaryColor" value="#1c1c18" oninput="onColorChange(this.value)" />
+              </div>
+              <input type="text" id="colorHex" value="#1c1c18" style="max-width:120px" oninput="onHexChange(this.value)" />
+              <div style="font-size:12px;color:var(--text3);margin-left:4px">HEX</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Posición</div>
+            <div class="card-desc">Dónde aparece el botón del asistente</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="position-options">
+            <div class="position-option selected" id="pos-right" onclick="selectPosition('right')">
+              <div class="position-preview">
+                <div class="position-dot right"></div>
+              </div>
+              <div class="position-label">Derecha</div>
+            </div>
+            <div class="position-option" id="pos-left" onclick="selectPosition('left')">
+              <div class="position-preview">
+                <div class="position-dot left"></div>
+              </div>
+              <div class="position-label">Izquierda</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Código de instalación</div>
+            <div class="card-desc">Pega este snippet en tu <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:4px">theme.liquid</code> antes de <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:4px">&lt;/body&gt;</code></div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="copyInstallCode()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar
+          </button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="code-block" id="installCode" style="border-radius:0 0 14px 14px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS -->
+    <div id="page-analytics" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Analytics</div>
+        <div class="page-desc">Comportamiento de tus clientes con el asistente.</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-sessions">0</div>
+          <div class="kpi-label">Sesiones</div>
+          <div class="kpi-trend">conversaciones abiertas</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-conv">0</div>
+          <div class="kpi-label">Conversiones</div>
+          <div class="kpi-trend">pedidos asistidos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-rate">0%</div>
+          <div class="kpi-label">Tasa</div>
+          <div class="kpi-trend">chat a compra</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Preguntas más frecuentes</div>
+            <div class="card-desc">Lo que más preguntan tus clientes</div>
+          </div>
+        </div>
+        <div class="card-body" id="topQuestionsContainer">
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <div class="empty-state-title">Sin conversaciones aún</div>
+            <div class="empty-state-desc">Los datos aparecerán cuando el asistente empiece a recibir preguntas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INSIGHTS -->
+    <div id="page-insights" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Insights IA</div>
+        <div class="page-desc">El asistente analiza el comportamiento de tus clientes y detecta oportunidades.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Análisis automático</div>
+            <div class="card-desc">Basado en las conversaciones y comportamiento de los últimos 30 días</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="generateInsights()" id="insightBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Generar análisis
+          </button>
+        </div>
+        <div class="card-body" id="insightsContainer">
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="empty-state-title">Sin análisis generado</div>
+            <div class="empty-state-desc">Pulsa "Generar análisis" para que el asistente revise los datos y te dé recomendaciones concretas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg">Guardado</span>
+</div>
+
+<script>
+const BACKEND = "https://shopiai-production.up.railway.app";
+const params = new URLSearchParams(window.location.search);
+const SHOP = params.get("shop") || "demo.myshopify.com";
+
+let config = {
+  assistantName: "Sara",
+  tone: "friendly",
+  language: "es",
+  triggerDelay: 3,
+  widgetPosition: "right",
+  primaryColor: "#1c1c18",
+  welcomeMessage: "Hola, ¿en qué puedo ayudarte?",
+  enableOrderTracking: true,
+  enableUpsell: true,
+  enableExitIntent: true,
+  enableProactiveBundle: false,
+  brandDescription: "",
+  allowedTopics: [],
+  blockedTopics: [],
+  faqs: [],
+  bundles: [],
+};
+
+const pages = ["identity","behavior","knowledge","bundles","widget","analytics","insights"];
+const pageTitles = {
+  identity: "Identidad",
+  behavior: "Comportamiento",
+  knowledge: "Conocimiento",
+  bundles: "Bundles",
+  widget: "Widget",
+  analytics: "Analytics",
+  insights: "Insights IA",
+};
+
+let currentPage = "identity";
+
+// ── INIT
+async function init() {
+  document.getElementById("storeName").textContent = SHOP.replace(".myshopify.com","");
+  updateInstallCode();
+
+  try {
+    const res = await fetch(`${BACKEND}/admin/config/${SHOP}`);
+    const data = await res.json();
+    if (data.config) {
+      config = { ...config, ...data.config };
+      document.getElementById("productCountBadge").textContent = (data.productCount || 0) + " productos";
+      applyConfig();
+    }
+  } catch(e) { console.warn("Config load failed:", e); }
+
+  loadAnalytics();
+}
+
+function applyConfig() {
+  document.getElementById("assistantName").value = config.assistantName || "";
+  document.getElementById("language").value = config.language || "es";
+  document.getElementById("welcomeMessage").value = config.welcomeMessage || "";
+  document.getElementById("brandDescription").value = config.brandDescription || "";
+  document.getElementById("triggerDelay").value = config.triggerDelay || 3;
+  document.getElementById("triggerVal").textContent = (config.triggerDelay || 3) + "s";
+
+  selectTone(config.tone || "friendly");
+  selectPosition(config.widgetPosition || "right");
+
+  const color = config.primaryColor || "#1c1c18";
+  document.getElementById("primaryColor").value = color;
+  document.getElementById("colorHex").value = color;
+  document.getElementById("colorPreview").style.background = color;
+
+  // Toggles
+  setToggle("tog-orderTracking", config.enableOrderTracking);
+  setToggle("tog-upsell", config.enableUpsell);
+  setToggle("tog-exitIntent", config.enableExitIntent);
+  setToggle("tog-proactiveBundle", config.enableProactiveBundle);
+
+  // Tags
+  renderTags("allowedTopics", config.allowedTopics || [], "green");
+  renderTags("blockedTopics", config.blockedTopics || [], "red");
+
+  renderFAQs();
+  renderBundles();
+}
+
+// ── NAV
+function nav(page) {
+  pages.forEach(p => {
+    document.getElementById(`page-${p}`).style.display = p === page ? "block" : "none";
+    document.getElementById(`nav-${p}`)?.classList.toggle("active", p === page);
+  });
+  document.getElementById("pageTitle").textContent = pageTitles[page];
+  currentPage = page;
+}
+
+// ── TONE
+function selectTone(tone) {
+  ["friendly","professional","technical","motivational"].forEach(t => {
+    document.getElementById(`tone-${t}`)?.classList.toggle("selected", t === tone);
+  });
+  config.tone = tone;
+}
+
+// ── POSITION
+function selectPosition(pos) {
+  ["right","left"].forEach(p => {
+    document.getElementById(`pos-${p}`)?.classList.toggle("selected", p === pos);
+  });
+  config.widgetPosition = pos;
+}
+
+// ── TOGGLES
+function setToggle(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.checked = !!val;
+}
+
+function toggleFeature(key, val) {
+  config[key] = val;
+}
+
+// ── COLOR
+function onColorChange(val) {
+  document.getElementById("colorHex").value = val;
+  document.getElementById("colorPreview").style.background = val;
+  config.primaryColor = val;
+}
+
+function onHexChange(val) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+    document.getElementById("primaryColor").value = val;
+    document.getElementById("colorPreview").style.background = val;
+    config.primaryColor = val;
+  }
+}
+
+// ── INSTALL CODE
+function updateInstallCode() {
+  document.getElementById("installCode").textContent =
+    `<script\n  src="${BACKEND}/widget.js"\n  data-shop="${SHOP}"\n  async>\n<\/script>`;
+}
+
+function copyInstallCode() {
+  const code = `<script src="${BACKEND}/widget.js" data-shop="${SHOP}" async><\/script>`;
+  navigator.clipboard.writeText(code);
+  showToast("Código copiado");
+}
+
+// ── TAGS
+function renderTags(containerId, tags, type) {
+  const container = document.getElementById(containerId);
+  const input = container.querySelector(".tag-input-inner");
+  container.innerHTML = "";
+  tags.forEach((tag, i) => {
+    const el = document.createElement("span");
+    el.className = `tag tag-${type}`;
+    el.innerHTML = `${tag}<span class="tag-remove" onclick="removeTag('${containerId}','${type}',${i})"><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg></span>`;
+    container.appendChild(el);
+  });
+  container.appendChild(input);
+}
+
+function addTag(id, e, type) {
+  if (e.key !== "Enter") return;
+  const input = document.getElementById(id).querySelector(".tag-input-inner");
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = "";
+  const key = id === "allowedTopics" ? "allowedTopics" : "blockedTopics";
+  if (!config[key]) config[key] = [];
+  config[key].push(val);
+  renderTags(id, config[key], type);
+}
+
+function removeTag(id, type, i) {
+  const key = id === "allowedTopics" ? "allowedTopics" : "blockedTopics";
+  config[key].splice(i, 1);
+  renderTags(id, config[key], type);
+}
+
+// ── FAQs
+function renderFAQs() {
+  const container = document.getElementById("faqContainer");
+  if (!config.faqs?.length) {
+    container.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div class="empty-state-title">Sin preguntas frecuentes</div><div class="empty-state-desc">Añade las preguntas más habituales de tus clientes con su respuesta ideal</div></div>`;
+    return;
+  }
+  container.innerHTML = config.faqs.map((faq, i) => `
+    <div class="faq-item">
+      <div class="faq-item-header">
+        <span class="faq-item-label">Pregunta ${i + 1}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeFAQ(${i})" style="padding:3px 6px;color:var(--text3)">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;stroke-width:2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="faq-item-body">
+        <input type="text" value="${escHtml(faq.q)}" placeholder="¿Cuánto tarda el envío?" oninput="config.faqs[${i}].q=this.value" />
+        <textarea placeholder="Realizamos envíos en 24-48h laborables..." oninput="config.faqs[${i}].a=this.value" style="min-height:72px">${escHtml(faq.a)}</textarea>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addFAQ() {
+  if (!config.faqs) config.faqs = [];
+  config.faqs.push({ q: "", a: "" });
+  renderFAQs();
+}
+
+function removeFAQ(i) {
+  config.faqs.splice(i, 1);
+  renderFAQs();
+}
+
+// ── BUNDLES
+function renderBundles() {
+  const container = document.getElementById("bundlesContainer");
+  if (!config.bundles?.length) {
+    container.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="card-body"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><div class="empty-state-title">Sin bundles configurados</div><div class="empty-state-desc">Crea packs de productos con descuento que el asistente sugerirá en el momento adecuado</div></div></div></div>`;
+    return;
+  }
+  container.innerHTML = config.bundles.map((b, i) => `
+    <div class="bundle-card">
+      <div class="bundle-card-header">
+        <input type="text" value="${escHtml(b.name)}" placeholder="Nombre del bundle" oninput="config.bundles[${i}].name=this.value" style="font-weight:600;font-size:13px;border:none;background:transparent;padding:0;width:auto;flex:1" />
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="discount-pill">-${b.discount || 0}%</div>
+          <button class="btn btn-ghost btn-sm" onclick="removeBundle(${i})" style="padding:4px 6px;color:var(--text3)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="bundle-card-body">
+        <div class="row2">
+          <div class="field" style="margin:0">
+            <div class="field-label">Productos incluidos <span class="field-hint">separados por coma</span></div>
+            <input type="text" value="${(b.products||[]).join(', ')}" placeholder="Whey Protein, Creatina..." oninput="config.bundles[${i}].products=this.value.split(',').map(s=>s.trim()).filter(Boolean)" />
+          </div>
+          <div class="field" style="margin:0">
+            <div class="field-label">Descuento (%)</div>
+            <input type="number" value="${b.discount||15}" min="1" max="70" oninput="config.bundles[${i}].discount=parseInt(this.value);renderBundles()" />
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <div class="field-label">Trigger <span class="field-hint">palabras que activan esta sugerencia</span></div>
+          <input type="text" value="${escHtml(b.trigger||'')}" placeholder="ganar músculo, proteína, volumen..." oninput="config.bundles[${i}].trigger=this.value" />
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addBundle() {
+  if (!config.bundles) config.bundles = [];
+  config.bundles.push({ name: "Nuevo Bundle", products: [], discount: 15, trigger: "" });
+  renderBundles();
+}
+
+function removeBundle(i) {
+  config.bundles.splice(i, 1);
+  renderBundles();
+}
+
+// ── SAVE
+async function saveConfig() {
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke-width:2;animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Guardando...`;
+
+  const toSave = {
+    ...config,
+    assistantName: document.getElementById("assistantName").value,
+    language: document.getElementById("language").value,
+    welcomeMessage: document.getElementById("welcomeMessage").value,
+    triggerDelay: parseInt(document.getElementById("triggerDelay").value),
+    brandDescription: document.getElementById("brandDescription").value,
+  };
+
+  try {
+    await fetch(`${BACKEND}/admin/config/${SHOP}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toSave),
+    });
+    showToast("Cambios guardados");
+  } catch(e) {
+    showToast("Error al guardar");
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke-width:2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar`;
+}
+
+// ── SYNC
+async function syncCatalog() {
+  const btn = document.getElementById("syncBtn");
+  btn.disabled = true;
+  btn.textContent = "Sincronizando...";
+
+  try {
+    const res = await fetch(`${BACKEND}/admin/sync/${SHOP}`, { method: "POST" });
+    const data = await res.json();
+    document.getElementById("productCountBadge").textContent = (data.productCount || 0) + " productos";
+    showToast(`${data.productCount || 0} productos sincronizados`);
+  } catch(e) {
+    showToast("Error al sincronizar");
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke-width:2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sincronizar`;
+}
+
+// ── ANALYTICS
+async function loadAnalytics() {
+  try {
+    const res = await fetch(`${BACKEND}/analytics/${SHOP}`);
+    const data = await res.json();
+
+    const sessions = data.summary?.chatSessions || 0;
+    const conv = data.summary?.conversions || 0;
+    const rate = data.summary?.conversionRate || 0;
+
+    document.getElementById("kpi-sessions").textContent = sessions;
+    document.getElementById("kpi-conv").textContent = conv;
+    document.getElementById("kpi-rate").textContent = rate + "%";
+    document.getElementById("navAnalyticsBadge").textContent = sessions;
+
+    const qContainer = document.getElementById("topQuestionsContainer");
+    if (data.topQuestions?.length) {
+      const max = data.topQuestions[0]?.count || 1;
+      qContainer.innerHTML = data.topQuestions.map((q, i) => `
+        <div class="stat-row">
+          <div class="stat-num">${i + 1}</div>
+          <div class="stat-text">${escHtml(q.q)}</div>
+          <div class="stat-count">${q.count}</div>
+          <div class="stat-bar"><div class="stat-fill" style="width:${Math.round((q.count/max)*100)}%"></div></div>
+        </div>
+      `).join("");
+    }
+  } catch(e) { console.warn("Analytics:", e); }
+}
+
+// ── INSIGHTS
+async function generateInsights() {
+  const btn = document.getElementById("insightBtn");
+  const container = document.getElementById("insightsContainer");
+  btn.disabled = true;
+  btn.textContent = "Analizando...";
+  container.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><div class="empty-state-title">Analizando datos...</div><div class="empty-state-desc">Esto puede tardar unos segundos</div></div>`;
+
+  try {
+    const res = await fetch(`${BACKEND}/admin/report/${SHOP}`, { method: "POST" });
+    const data = await res.json();
+
+    if (data.report) {
+      const lines = data.report.split("\n").filter(Boolean);
+      container.innerHTML = lines.map(line => {
+        const type = line.includes("⚠") || line.includes("alto") ? "warning"
+          : line.includes("bien") || line.includes("mejor") ? "success" : "info";
+        const icon = type === "warning"
+          ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+          : type === "success"
+          ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+        return `<div class="insight-card ${type}"><div class="insight-icon">${icon}</div><div><div class="insight-desc">${escHtml(line.replace(/[⚠✅💡]/g,"").trim())}</div></div></div>`;
+      }).join("");
+    }
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-title">Error al generar el análisis</div></div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke-width:2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Generar análisis`;
+}
+
+// ── TOAST
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  toast.style.display = "flex";
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => toast.style.display = "none", 2800);
+}
+
+// ── UTILS
+function escHtml(str) {
+  return (str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── SPIN ANIMATION
+const style = document.createElement("style");
+style.textContent = "@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }";
+document.head.appendChild(style);
+
+init();
+</script>
+</body>
+</html>

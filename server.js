@@ -535,4 +535,5 @@ app.get("/widget/config/:shop", (req, res) => {
   });
 });
 
-app.listen(3000, () => console.log("Shopi Advisor backend running on :3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Shopi Advisor backend running on :${PORT}`));

@@ -10,10 +10,14 @@ app.use(cors({ origin: "*" }));
 
 const { SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, ANTHROPIC_API_KEY, APP_URL, SUPABASE_URL, SUPABASE_KEY } = process.env;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const conversations = new Map();
-const analytics = new Map();
 
-// ── SUPABASE
+// Conversaciones en memoria por sesión (caché temporal)
+const sessionCache = new Map();
+
+// ─────────────────────────────────────────
+// SUPABASE — STORES
+// ─────────────────────────────────────────
+
 async function getStore(shop) {
   const { data, error } = await supabase.from("stores").select("*").eq("shop", shop).single();
   if (error) return null;
@@ -22,11 +26,119 @@ async function getStore(shop) {
 
 async function saveStore(shop, data) {
   const { error } = await supabase.from("stores").upsert({ shop, ...data }, { onConflict: "shop" });
-  if (error) console.error("Supabase error:", error.message);
+  if (error) console.error("Supabase store error:", error.message);
   else console.log("Saved store:", shop);
 }
 
-// ── OAUTH
+// ─────────────────────────────────────────
+// SUPABASE — CONVERSATIONS
+// ─────────────────────────────────────────
+
+async function getConversation(sessionId) {
+  // Primero intenta caché en memoria
+  if (sessionCache.has(sessionId)) return sessionCache.get(sessionId);
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("session_id", sessionId)
+    .single();
+
+  if (error || !data) return null;
+  sessionCache.set(sessionId, data);
+  return data;
+}
+
+async function saveConversation(shop, sessionId, messages, context) {
+  const id = `${shop}_${sessionId}`;
+  const data = {
+    id,
+    shop,
+    session_id: sessionId,
+    messages,
+    context,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from("conversations")
+    .upsert(data, { onConflict: "id" });
+
+  if (error) console.error("Conversation save error:", error.message);
+
+  // Actualizar caché
+  sessionCache.set(sessionId, data);
+}
+
+// ─────────────────────────────────────────
+// SUPABASE — EVENTS / ANALYTICS
+// ─────────────────────────────────────────
+
+async function trackEvent(shop, sessionId, type, data) {
+  await supabase.from("events").insert({
+    shop,
+    session_id: sessionId,
+    type,
+    data,
+    created_at: new Date().toISOString(),
+  });
+}
+
+async function getAnalytics(shop) {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [eventsRes, convsRes] = await Promise.all([
+    supabase.from("events").select("*").eq("shop", shop).gte("created_at", thirtyDaysAgo),
+    supabase.from("conversations").select("id,session_id,messages,context,created_at,updated_at").eq("shop", shop).order("updated_at", { ascending: false }).limit(50),
+  ]);
+
+  const events = eventsRes.data || [];
+  const convs = convsRes.data || [];
+
+  const messages = events.filter(e => e.type === "message");
+  const conversions = events.filter(e => e.type === "conversion");
+  const sessions = new Set(messages.map(e => e.session_id)).size;
+
+  const qFreq = {};
+  messages.forEach(e => {
+    const q = e.data?.message?.slice(0, 80);
+    if (q) qFreq[q] = (qFreq[q] || 0) + 1;
+  });
+
+  return {
+    summary: {
+      chatSessions: sessions,
+      conversions: conversions.length,
+      conversionRate: sessions ? ((conversions.length / sessions) * 100).toFixed(1) : 0,
+      orderQueries: messages.filter(e => e.data?.hasOrderLookup).length,
+      productCardShows: messages.filter(e => e.data?.hasProductCards).length,
+      totalMessages: messages.length,
+    },
+    topQuestions: Object.entries(qFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([q, count]) => ({ q, count })),
+    conversations: convs.map(c => {
+      const msgs = c.messages || [];
+      const firstUserMsg = msgs.find(m => m.role === "user")?.content || "";
+      const lastMsg = msgs[msgs.length - 1]?.content || "";
+      return {
+        sessionId: c.session_id,
+        messageCount: msgs.length,
+        firstMessage: firstUserMsg.slice(0, 80),
+        lastMessage: lastMsg.slice(0, 80),
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+        context: c.context,
+      };
+    }),
+  };
+}
+
+// ─────────────────────────────────────────
+// OAUTH
+// ─────────────────────────────────────────
+
 app.get("/auth", (req, res) => {
   const { shop } = req.query;
   if (!shop) return res.status(400).send("Missing shop");
@@ -52,11 +164,11 @@ app.get("/auth/callback", async (req, res) => {
       access_token,
       config: {
         assistantName: "Sara", tone: "friendly", language: "auto",
-        triggerDelay: 4, widgetPosition: "right", primaryColor: "#1c1c18",
+        triggerDelay: 4, widgetPosition: "right", primaryColor: "#e97a1a",
         welcomeMessage: "¿En qué puedo ayudarte?",
         enableOrderTracking: true, enableUpsell: true, enableExitIntent: true,
-        freeShippingThreshold: 50, brandDescription: "", allowedTopics: [],
-        blockedTopics: [], faqs: [], bundles: [],
+        freeShippingThreshold: 50, active: true,
+        brandDescription: "", allowedTopics: [], blockedTopics: [], faqs: [], bundles: [],
       },
       installed_at: new Date().toISOString(),
     });
@@ -69,14 +181,20 @@ app.get("/auth/callback", async (req, res) => {
   }
 });
 
-// ── SHOPIFY HELPERS
+// ─────────────────────────────────────────
+// SHOPIFY HELPERS
+// ─────────────────────────────────────────
+
 async function shopifyFetch(shop, token, endpoint) {
   const res = await fetch(`https://${shop}/admin/api/2024-01/${endpoint}`, { headers: { "X-Shopify-Access-Token": token } });
   if (!res.ok) throw new Error(`Shopify API ${res.status}: ${endpoint}`);
   return res.json();
 }
 
-// ── PRODUCT SEARCH
+// ─────────────────────────────────────────
+// PRODUCT SEARCH
+// ─────────────────────────────────────────
+
 async function searchProducts(shop, query, limit = 3) {
   const store = await getStore(shop);
   if (!store?.catalog?.products) return [];
@@ -111,7 +229,10 @@ async function searchProducts(shop, query, limit = 3) {
     }));
 }
 
-// ── ORDER LOOKUP
+// ─────────────────────────────────────────
+// ORDER LOOKUP
+// ─────────────────────────────────────────
+
 async function lookupOrder(shop, query) {
   const store = await getStore(shop);
   if (!store?.access_token) return null;
@@ -153,7 +274,7 @@ function formatOrderForClaude(orders) {
   return orders.map(o => {
     let info = `Pedido ${o.name} — ${o.status.toUpperCase()}\nProductos: ${o.items}\nTotal: ${o.total}\nFecha: ${o.createdAt}`;
     if (o.trackingNumber) info += `\nSeguimiento: ${o.trackingNumber} (${o.trackingCompany || "transportista"})`;
-    if (o.trackingUrl) info += `\nURL tracking (clicable para el cliente): ${o.trackingUrl}`;
+    if (o.trackingUrl) info += `\nURL tracking (incluye el enlace completo en tu respuesta): ${o.trackingUrl}`;
     if (o.estimatedDelivery) info += `\nEntrega estimada: ${o.estimatedDelivery}`;
     if (o.isLate) info += `\n⚠ RETRASO: ${o.daysSince} días desde el pedido.`;
     if (o.cancelled) info += `\nPedido cancelado.`;
@@ -180,9 +301,12 @@ function extractOrderQuery(message, history) {
   return null;
 }
 
-// ── SYSTEM PROMPT — con detección de idioma
+// ─────────────────────────────────────────
+// SYSTEM PROMPT
+// ─────────────────────────────────────────
+
 function generateSystemPrompt(config, catalog, browserLang) {
-  const { products = [], shop, pages = [] } = catalog;
+  const { products = [], shop } = catalog;
 
   const productList = products.slice(0, 60).map(p => {
     const price = p.variants?.[0]?.price || "?";
@@ -199,24 +323,10 @@ function generateSystemPrompt(config, catalog, browserLang) {
 
   const brandText = config?.brandDescription ? `\nSOBRE LA MARCA:\n${config.brandDescription}` : "";
 
-  // Idioma: config > navegador > español
   const lang = config?.language === "auto" ? (browserLang || "es") : (config?.language || "es");
+  const langInstruction = { es:"Responde SIEMPRE en español.", ca:"Respon SEMPRE en català.", en:"ALWAYS respond in English.", fr:"Réponds TOUJOURS en français.", de:"Antworte IMMER auf Deutsch.", pt:"Responde SEMPRE em português." }[lang] || "Responde SIEMPRE en español.";
 
-  const langInstruction = {
-    es: "Responde SIEMPRE en español.",
-    ca: "Respon SEMPRE en català.",
-    en: "ALWAYS respond in English.",
-    fr: "Réponds TOUJOURS en français.",
-    de: "Antworte IMMER auf Deutsch.",
-    pt: "Responde SEMPRE em português.",
-  }[lang] || "Responde SIEMPRE en español.";
-
-  const toneMap = {
-    friendly: "cercano y natural, como alguien de confianza que trabaja en la tienda",
-    professional: "profesional y claro, sin familiaridades",
-    technical: "técnico y preciso, basado en datos",
-    motivational: "motivador y directo, empuja a la acción",
-  };
+  const toneMap = { friendly:"cercano y natural, como alguien de confianza que trabaja en la tienda", professional:"profesional y claro, sin familiaridades", technical:"técnico y preciso, basado en datos", motivational:"motivador y directo, empuja a la acción" };
 
   return `Eres el asistente de ${shop?.name || shop}. Tu tono es ${toneMap[config?.tone] || toneMap.friendly}.
 ${langInstruction}
@@ -224,34 +334,27 @@ ${langInstruction}
 REGLAS DE COMUNICACIÓN — CRÍTICAS:
 1. Máximo 2 frases por mensaje. Sin excepciones.
 2. Máximo 1 emoji por mensaje. Si no aporta, ninguno.
-3. NUNCA más de 1 pregunta por mensaje. Si tienes dos preguntas, elige la más importante.
-4. NUNCA uses "o" para unir dos preguntas ("¿Quieres X o prefieres Y?" = DOS preguntas = PROHIBIDO).
-5. Sin "¡Claro!", "¡Por supuesto!", "¡Genial!", "¡Perfecto!" ni ningún relleno positivo.
+3. NUNCA más de 1 pregunta por mensaje.
+4. NUNCA uses "o" para unir dos preguntas ("¿Quieres X o prefieres Y?" = PROHIBIDO).
+5. Sin "¡Claro!", "¡Por supuesto!", "¡Genial!", "¡Perfecto!" ni relleno positivo.
 6. Sin listas con puntos. Solo frases naturales.
 7. Si el cliente ya sabe lo que quiere, ayúdale a cerrar sin más preguntas.
 
-MAL: "¿Quieres añadir algo más o prefieres finalizar el pedido?"  ← DOS PREGUNTAS, PROHIBIDO
-BIEN: "¿Añadimos algo más antes de finalizar?"  ← UNA pregunta
+MAL: "¿Quieres añadir algo más o prefieres finalizar el pedido?"
+BIEN: "¿Añadimos algo más antes de finalizar?"
 
-MAL: "¡Genial elección! Este producto va perfecto para ti porque..."
-BIEN: "Buena elección. Va muy bien para piel seca."
+PEDIDOS:
+- Si tienes datos reales del pedido en el contexto, úsalos directamente.
+- Si hay URL de tracking, inclúyela completa en tu respuesta.
+- Si hay retraso, reconócelo y ofrece UNA solución concreta.
+- Si no tienes los datos, pide email o número de pedido en una frase directa.
 
-PEDIDOS — IMPORTANTE:
-- Cuando tengas datos reales del pedido en el contexto, devuelve la info de forma clara y humana.
-- Si hay URL de tracking, ponla completa para que el cliente pueda copiarla o hacer clic.
-- Si hay retraso, reconócelo directamente y ofrece UNA solución concreta.
-- No inventes datos que no estén en el contexto del pedido.
-- Si no tienes los datos del pedido, pide email o número de pedido en UNA sola frase directa.
-
-PRODUCT CARDS:
-Cuando el cliente pide recomendaciones, añade al final de tu mensaje:
+PRODUCT CARDS — añade al final si es útil:
 SHOW_PRODUCTS:{"query":"término","reason":"motivo"}
-Solo cuando sea genuinamente útil. No en preguntas de pedidos ni envíos.
 
 VENTAS:
-- Si le falta poco para envío gratis, menciónalo UNA vez de forma natural en la conversación.
+- Si le falta poco para envío gratis, menciónalo UNA vez de forma natural.
 - 1 producto complementario máximo si tiene sentido real.
-- Bundles solo cuando hay intención clara de compra múltiple.
 
 CATÁLOGO (${products.length} productos):
 ${productList || "Sin productos cargados"}
@@ -259,11 +362,14 @@ ${brandText}${bundlesText}${faqText}
 
 LÍMITES:
 - Nunca inventes precios, stock ni plazos no confirmados.
-- Si no sabes algo: "No tengo ese dato, te lo confirmo." y ofrece contacto.
+- Si no sabes algo: "No tengo ese dato." y ofrece contacto.
 - Sin competencia ni comparativas externas.`;
 }
 
-// ── CATALOG SYNC
+// ─────────────────────────────────────────
+// CATALOG SYNC
+// ─────────────────────────────────────────
+
 async function syncCatalog(shop) {
   const store = await getStore(shop);
   if (!store?.access_token) { console.error("No token:", shop); return 0; }
@@ -282,7 +388,10 @@ async function syncCatalog(shop) {
   } catch (err) { console.error("Sync error:", err.message); return 0; }
 }
 
-// ── CHAT
+// ─────────────────────────────────────────
+// CHAT
+// ─────────────────────────────────────────
+
 app.post("/chat", async (req, res) => {
   const { shop, sessionId, message, context } = req.body;
   if (!shop || !message) return res.status(400).json({ error: "Missing data" });
@@ -290,24 +399,29 @@ app.post("/chat", async (req, res) => {
   const store = await getStore(shop);
   if (!store) return res.status(404).json({ error: "Store not found" });
 
-  if (!conversations.has(sessionId)) conversations.set(sessionId, []);
-  const history = conversations.get(sessionId);
+  // ── Verificar si el agente está activo
+  if (store.config?.active === false) {
+    return res.status(403).json({ error: "Agent inactive" });
+  }
 
-  // Order lookup
+  // ── Cargar o crear conversación
+  const conv = await getConversation(sessionId);
+  const history = conv?.messages || [];
+
+  // ── Order lookup
   let orderContext = "";
   const orderQuery = extractOrderQuery(message, history);
   if (orderQuery && orderQuery !== "NEEDS_INFO") {
     const orders = await lookupOrder(shop, orderQuery);
-    if (orders) orderContext = `\n\n[DATOS REALES DEL PEDIDO — usa esta información, incluye la URL de tracking completa para que el cliente pueda hacer clic:\n${formatOrderForClaude(orders)}\n]`;
-    else orderContext = `\n\n[No se encontró pedido con "${orderQuery}". Dile que revise los datos o contacte directamente.]`;
+    if (orders) orderContext = `\n\n[DATOS REALES DEL PEDIDO:\n${formatOrderForClaude(orders)}\n]`;
+    else orderContext = `\n\n[No se encontró pedido con "${orderQuery}". Dile que revise los datos.]`;
   }
 
-  // Context block
+  // ── Context block
   const threshold = store.config?.freeShippingThreshold || 50;
   const remaining = context?.cartTotal ? Math.max(0, threshold - context.cartTotal) : threshold;
-  const contextBlock = `\n\n[CONTEXTO: ${context?.productTitle ? `Cliente mirando "${context.productTitle}" (€${context.productPrice||"?"}). ` : `Página: ${context?.pageType||"general"}. `}${context?.cartTotal > 0 ? `Carrito: €${context.cartTotal} (${context.cartCount} productos). Faltan €${remaining.toFixed(2)} para envío gratis. ` : "Carrito vacío. "}${context?.isReturning ? "Segunda visita. " : ""}${context?.browserLang ? `Idioma navegador: ${context.browserLang}.` : ""}]${orderContext}`;
+  const contextBlock = `\n\n[CONTEXTO: ${context?.productTitle ? `Cliente mirando "${context.productTitle}" (€${context.productPrice||"?"}). ` : `Página: ${context?.pageType||"general"}. `}${context?.cartTotal > 0 ? `Carrito: €${context.cartTotal} (${context.cartCount} productos). Faltan €${remaining.toFixed(2)} para envío gratis. ` : "Carrito vacío. "}${context?.isReturning ? "Segunda visita. " : ""}${context?.browserLang ? `Idioma: ${context.browserLang}.` : ""}]${orderContext}`;
 
-  // Regenerar system prompt con idioma del navegador
   const browserLang = context?.browserLang || "es";
   const systemPrompt = store.catalog
     ? generateSystemPrompt(store.config, store.catalog, browserLang)
@@ -330,7 +444,6 @@ app.post("/chat", async (req, res) => {
     const data = await claudeRes.json();
     const raw = data.content?.[0]?.text || "Lo siento, ha habido un error.";
 
-    // Detect SHOW_PRODUCTS
     const productMatch = raw.match(/SHOW_PRODUCTS:\{"query":"([^"]+)","reason":"([^"]+)"\}/);
     const reply = raw.replace(/SHOW_PRODUCTS:\{[^}]+\}/g, "").trim();
 
@@ -338,7 +451,19 @@ app.post("/chat", async (req, res) => {
     if (productMatch) productCards = await searchProducts(shop, productMatch[1]);
 
     history.push({ role: "assistant", content: raw });
-    trackEvent(shop, { type: "message", sessionId, message, reply, hasOrderLookup: !!orderContext, hasProductCards: productCards.length > 0, context });
+
+    // ── Guardar conversación en Supabase
+    await saveConversation(shop, sessionId, history, context);
+
+    // ── Guardar evento en Supabase
+    await trackEvent(shop, sessionId, "message", {
+      message,
+      reply,
+      hasOrderLookup: !!orderContext,
+      hasProductCards: productCards.length > 0,
+      pageType: context?.pageType,
+      cartTotal: context?.cartTotal,
+    });
 
     res.json({ reply, productCards, sessionId });
   } catch (err) {
@@ -347,7 +472,10 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// ── ADMIN
+// ─────────────────────────────────────────
+// ADMIN API
+// ─────────────────────────────────────────
+
 app.get("/admin/config/:shop", async (req, res) => {
   const store = await getStore(req.params.shop);
   if (!store) return res.status(404).json({ error: "Store not found" });
@@ -363,24 +491,94 @@ app.patch("/admin/config/:shop", async (req, res) => {
   res.json({ ok: true, config: newConfig });
 });
 
+// ── Toggle activo/inactivo
+app.post("/admin/toggle/:shop", async (req, res) => {
+  const store = await getStore(req.params.shop);
+  if (!store) return res.status(404).json({ error: "Store not found" });
+  const newActive = !store.config?.active;
+  const newConfig = { ...store.config, active: newActive };
+  await saveStore(req.params.shop, { access_token: store.access_token, config: newConfig, catalog: store.catalog, system_prompt: store.system_prompt, last_sync: store.last_sync });
+  console.log(`Agent ${newActive ? "activated" : "deactivated"} for ${req.params.shop}`);
+  res.json({ ok: true, active: newActive });
+});
+
 app.post("/admin/sync/:shop", async (req, res) => {
   const count = await syncCatalog(req.params.shop);
   const store = await getStore(req.params.shop);
   res.json({ ok: true, productCount: count, lastSync: store?.last_sync });
 });
 
-app.post("/admin/report/:shop", async (req, res) => {
-  const events = analytics.get(req.params.shop) || [];
-  const msgs = events.filter(e => e.type === "message");
-  if (!msgs.length) return res.json({ report: "Sin datos suficientes todavía." });
+// ── Analytics con datos reales de Supabase
+app.get("/analytics/:shop", async (req, res) => {
   try {
+    const data = await getAnalytics(req.params.shop);
+    res.json(data);
+  } catch (err) {
+    console.error("Analytics error:", err);
+    res.status(500).json({ error: "Error loading analytics" });
+  }
+});
+
+// ── Conversaciones reales
+app.get("/admin/conversations/:shop", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id,session_id,messages,context,created_at,updated_at")
+      .eq("shop", req.params.shop)
+      .order("updated_at", { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    const convs = (data || []).map(c => {
+      const msgs = c.messages || [];
+      const firstUserMsg = msgs.find(m => m.role === "user")?.content || "";
+      const lastMsg = msgs[msgs.length - 1]?.content || "";
+      const hasOrder = msgs.some(m => m.content?.includes("pedido") || m.content?.includes("tracking"));
+      const hasProduct = msgs.some(m => m.content?.includes("SHOW_PRODUCTS"));
+      return {
+        sessionId: c.session_id,
+        messageCount: msgs.length,
+        firstMessage: firstUserMsg.slice(0, 100),
+        lastMessage: lastMsg.slice(0, 100),
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+        context: c.context,
+        hasOrder,
+        hasProduct,
+      };
+    });
+
+    res.json({ conversations: convs });
+  } catch (err) {
+    console.error("Conversations error:", err);
+    res.status(500).json({ error: "Error loading conversations" });
+  }
+});
+
+// ── Conversación individual
+app.get("/admin/conversations/:shop/:sessionId", async (req, res) => {
+  const conv = await getConversation(req.params.sessionId);
+  if (!conv) return res.status(404).json({ error: "Not found" });
+  res.json(conv);
+});
+
+// ── Report / Insights
+app.post("/admin/report/:shop", async (req, res) => {
+  try {
+    const analytics = await getAnalytics(req.params.shop);
+    const { summary, topQuestions } = analytics;
+
+    if (!summary.totalMessages) return res.json({ report: "Sin datos suficientes todavía." });
+
     const cr = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514", max_tokens: 800,
-        system: "Eres un analista de ecommerce. Insights concisos y accionables en español. Sin bullet points.",
-        messages: [{ role: "user", content: `Analiza:\nConversaciones: ${msgs.length}\nPedidos: ${msgs.filter(e=>e.hasOrderLookup).length}\nCards producto: ${msgs.filter(e=>e.hasProductCards).length}\n\nPreguntas:\n${msgs.slice(-30).map(e=>e.message).join("\n")}\n\nDa 4-5 insights accionables.` }],
+        system: "Eres un analista de ecommerce. Insights concisos y accionables en español. Sin bullet points. Párrafos cortos.",
+        messages: [{ role: "user", content: `Analiza estos datos de Shopi Advisor:\n\nSesiones de chat: ${summary.chatSessions}\nMensajes totales: ${summary.totalMessages}\nConsultas de pedidos: ${summary.orderQueries}\nCards de producto: ${summary.productCardShows}\nConversiones: ${summary.conversions}\nTasa conversión: ${summary.conversionRate}%\n\nPreguntas más frecuentes:\n${topQuestions.map(q => `- "${q.q}" (${q.count} veces)`).join("\n")}\n\nDa 4-5 insights accionables para mejorar el rendimiento del asistente.` }],
       }),
     });
     const d = await cr.json();
@@ -388,38 +586,30 @@ app.post("/admin/report/:shop", async (req, res) => {
   } catch { res.status(500).json({ error: "Error generando informe" }); }
 });
 
-// ── ANALYTICS
-function trackEvent(shop, event) {
-  if (!analytics.has(shop)) analytics.set(shop, []);
-  const events = analytics.get(shop);
-  events.push({ ...event, timestamp: new Date().toISOString() });
-  if (events.length > 10000) events.splice(0, events.length - 10000);
-}
-
-app.post("/analytics/event", (req, res) => {
+// ── Analytics event (desde widget)
+app.post("/analytics/event", async (req, res) => {
   const { shop, event } = req.body;
-  if (shop && event) trackEvent(shop, event);
+  if (shop && event) {
+    await trackEvent(shop, event.sessionId, event.type, event).catch(() => {});
+  }
   res.json({ ok: true });
 });
 
-app.get("/analytics/:shop", (req, res) => {
-  const events = analytics.get(req.params.shop) || [];
-  const msgs = events.filter(e => e.type === "message");
-  const convs = events.filter(e => e.type === "conversion");
-  const sessions = new Set(msgs.map(e => e.sessionId)).size;
-  const qFreq = {};
-  msgs.forEach(e => { const q = e.message?.slice(0, 80); if (q) qFreq[q] = (qFreq[q] || 0) + 1; });
-  res.json({
-    summary: { chatSessions: sessions, conversions: convs.length, conversionRate: sessions ? ((convs.length/sessions)*100).toFixed(1) : 0, orderQueries: msgs.filter(e=>e.hasOrderLookup).length, productCardShows: msgs.filter(e=>e.hasProductCards).length },
-    topQuestions: Object.entries(qFreq).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([q,count])=>({q,count})),
-  });
-});
+// ─────────────────────────────────────────
+// WIDGET CONFIG
+// ─────────────────────────────────────────
 
-// ── WIDGET CONFIG
 app.get("/widget/config/:shop", async (req, res) => {
   const store = await getStore(req.params.shop);
   if (!store) return res.status(404).json({ error: "Store not configured" });
+
+  // Si está desactivado, devolver señal al widget
+  if (store.config?.active === false) {
+    return res.json({ active: false });
+  }
+
   res.json({
+    active: true,
     assistantName: store.config?.assistantName,
     welcomeMessage: store.config?.welcomeMessage,
     primaryColor: store.config?.primaryColor,
@@ -431,5 +621,9 @@ app.get("/widget/config/:shop", async (req, res) => {
   });
 });
 
+// ─────────────────────────────────────────
+// START
+// ─────────────────────────────────────────
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Shopi Advisor v5 running on :${PORT}`));
+app.listen(PORT, () => console.log(`Shopi Advisor v6 running on :${PORT}`));

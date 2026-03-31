@@ -1,0 +1,230 @@
+{% comment %}
+  SHOPI ADVISOR — Página de ayuda dedicada
+  
+  Instrucciones de instalación:
+  1. En Shopify Admin → Tienda online → Páginas → Añadir página
+  2. Título: "Ayuda" (genera la URL /pages/ayuda automáticamente)
+  3. En "Plantilla de página" selecciona "page.sara" (si tienes acceso al editor de temas)
+  4. O simplemente usa esta plantilla en: templates/page.sara.liquid
+  
+  Alternativa rápida (sin plantilla):
+  - Crear página con URL /pages/ayuda
+  - El widget detecta automáticamente esa URL y abre el chat solo
+{% endcomment %}
+
+<!DOCTYPE html>
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ayuda — {{ shop.name }}</title>
+
+  {{ content_for_header }}
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f8f6;
+      --text: #1c1c18;
+      --muted: #a8a89e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header mínimo */
+    .help-nav {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(248,248,246,0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .help-nav-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .help-nav-back:hover { color: var(--text); }
+
+    .help-nav-logo {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    /* Hero */
+    .help-hero {
+      padding: 48px 24px 32px;
+      text-align: center;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .help-title {
+      font-size: clamp(24px, 5vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+
+    .help-desc {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-weight: 400;
+    }
+
+    /* El widget ocupa el espacio central */
+    .help-chat-area {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8px 16px 32px;
+    }
+
+    /* Quick topics */
+    .help-topics {
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 24px 40px;
+    }
+
+    .help-topics-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .help-topics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .help-topic {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+
+    .help-topic:hover {
+      border-color: rgba(0,0,0,0.15);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      transform: translateY(-1px);
+    }
+
+    .help-topic-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      letter-spacing: -0.01em;
+    }
+
+    .help-topic-desc {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    @media (max-width: 400px) {
+      .help-topics-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <nav class="help-nav">
+    <a href="/" class="help-nav-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Volver a la tienda
+    </a>
+    <a href="/" class="help-nav-logo">{{ shop.name }}</a>
+    <div style="width:100px"></div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="help-hero">
+    <h1 class="help-title">¿En qué podemos<br>ayudarte?</h1>
+    <p class="help-desc">Sara está aquí para resolver tus dudas sobre productos, pedidos, envíos y devoluciones.</p>
+  </div>
+
+  <!-- Topics rápidos -->
+  <div class="help-topics">
+    <div class="help-topics-title">Temas frecuentes</div>
+    <div class="help-topics-grid">
+      <div class="help-topic" onclick="window.__saTopicClick('¿Dónde está mi pedido?')">
+        <div class="help-topic-label">Seguimiento de pedido</div>
+        <div class="help-topic-desc">Estado, tracking y plazos</div>
+      </div>
+      <div class="help-topic" onclick="window.__saTopicClick('¿Cómo hago una devolución?')">
+        <div class="help-topic-label">Devoluciones</div>
+        <div class="help-topic-desc">Plazos y proceso</div>
+      </div>
+      <div class="help-topic" onclick="window.__saTopicClick('¿Cuánto tarda el envío?')">
+        <div class="help-topic-label">Plazos de envío</div>
+        <div class="help-topic-desc">Tiempos y métodos</div>
+      </div>
+      <div class="help-topic" onclick="window.__saTopicClick('Recomiéndame productos')">
+        <div class="help-topic-label">Recomendaciones</div>
+        <div class="help-topic-desc">Encuentra lo que buscas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- El widget de Sara se inyecta aquí -->
+  <script>
+    window.__saTopicClick = function(text) {
+      // Abre el chat con ese mensaje si el widget está cargado
+      if (window.__saQR) {
+        window.__saQR(text);
+      }
+    };
+  </script>
+
+  {{ content_for_layout }}
+
+  <!-- Widget Sara — detecta automáticamente /pages/ayuda -->
+  <script
+    src="{{ 'widget.js' | asset_url }}"
+    data-shop="{{ shop.permanent_domain }}"
+    async>
+  </script>
+
+</body>
+</html>
